@@ -1,3 +1,8 @@
+################################################
+## SCM
+################################################
+
+
 echo "# CS_NodeJs_Ocr_" >> README.md
 git init
 git add README.md
@@ -5,3 +10,25 @@ git commit -m "first commit"
 git branch -M main
 git remote add origin https://github.com/aperezNWO/CS_NodeJs_Ocr_.git
 git push -u origin main
+
+
+# Step 1: Install OpenCV system library (done)
+sudo apt-get update
+sudo apt-get install libopencv-dev
+
+# Step 2: Install Node.js wrapper (MUST do this too!)
+
+    # Set the correct library path (adjust if your path is different)
+    export OPENCV_LIB_DIR=/usr/lib/x86_64-linux-gnu
+
+    # Also set include path
+    export OPENCV_INCLUDE_DIR=/usr/include/opencv4
+
+    # Clean reinstall
+    rm -rf package-lock.json
+    npm cache clean --force
+    export OPENCV4NODEJS_DISABLE_AUTOBUILD=1
+
+    # ⏳ This compiles OpenCV — takes 5–10 min the first time
+    npm install @u4/opencv4nodejs --verbose 
+    
