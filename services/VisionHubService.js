@@ -218,6 +218,127 @@ class VisionHubService {
       });
     }
   }
+
+  //============================================================================
+  // FRACTAL GENERATION FUNCTIONS
+  //============================================================================
+
+  /**
+   * Calculates the color for a specific iteration in the Julia set
+   * @param {number} iteration - Current iteration count
+   * @param {number} maxIterations - Maximum iterations
+   * @returns {cv.Vec3} - BGR color vector
+   */
+  static getJuliaColor(iteration, maxIterations) {
+    if (iteration === maxIterations) {
+      return new cv.Vec3(0, 0, 0); // Black for points inside the set
+    }
+
+    // Map iteration count to RGB
+    const t = iteration / maxIterations;
+    const r = Math.floor(9 * (1 - t) * t * t * t * 255);
+    const g = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
+    const b = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
+
+    // OpenCV uses BGR format
+    return new cv.Vec3(b, g, r);
+  }
+
+  /**
+   * Generates a Julia set fractal image
+   * @param {number} width - Image width
+   * @param {number} height - Image height
+   * @param {number} maxIterations - Maximum iterations for the fractal
+   * @param {number} cReal - Real part of the complex constant c
+   * @param {number} cImag - Imaginary part of the complex constant c
+   * @returns {cv.Mat} - The generated OpenCV Mat image
+   */
+  static generateJulia(width, height, maxIterations, cReal, cImag) {
+    // Create a blank image (height, width, type, color)
+    const img = new cv.Mat(height, width, cv.CV_8UC3, new cv.Vec3(0, 0, 0));
+
+    for (let y = 0; y < height; ++y) {
+      for (let x = 0; x < width; ++x) {
+        // Map pixel position to a point in the complex plane
+        const zx = -1.5 + (x / width) * 3.0;
+        const zy = -1.5 + (y / height) * 3.0;
+
+        let zReal = zx;
+        let zImag = zy;
+
+        let iteration = 0;
+        // abs(z) < 2 is mathematically equivalent to zReal^2 + zImag^2 < 4
+        while (zReal * zReal + zImag * zImag < 4 && iteration < maxIterations) {
+          // z = z * z + c
+          // (zReal + i*zImag)^2 = (zReal^2 - zImag^2) + i*(2*zReal*zImag)
+          const nextZReal = zReal * zReal - zImag * zImag + cReal;
+          const nextZImag = 2 * zReal * zImag + cImag;
+
+          zReal = nextZReal;
+          zImag = nextZImag;
+          ++iteration;
+        }
+
+        // Color the pixel based on the number of iterations
+        img.set(y, x, this.getJuliaColor(iteration, maxIterations));
+      }
+    }
+    return img;
+  }
+
+  /**
+   * Generates a Julia fractal and sends it as a base64 image to the client
+   * @param {number} width - Image width
+   * @param {number} height - Image height
+   * @param {number} maxIterations - Maximum iterations
+   * @param {number} cReal - Real part of complex constant c
+   * @param {number} cImag - Imaginary part of complex constant c
+   * @param {Object} res - Express response object
+   * @returns {Promise<void>}
+   */
+  static async doGenerateJulia(
+    width,
+    height,
+    maxIterations,
+    cReal,
+    cImag,
+    res
+  ) {
+    try {
+      console.log(
+        `Generating Julia fractal: ${width}x${height}, maxIter: ${maxIterations}, c: ${cReal} + ${cImag}i`
+      );
+
+      // Generate the fractal image
+      const img = this.generateJulia(
+        width,
+        height,
+        maxIterations,
+        cReal,
+        cImag
+      );
+
+      // Encode the image to PNG buffer
+      const imageBuffer = img.imencode(".png");
+
+      // Convert to base64
+      const base64Image = `data:image/png;base64,${imageBuffer.toString(
+        "base64"
+      )}`;
+
+      res.status(200).json({
+        success: true,
+        message: "Fractal generated successfully",
+        image: base64Image,
+      });
+    } catch (error) {
+      console.error("Fractal Generation Error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
 }
 
 //
