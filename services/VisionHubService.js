@@ -360,6 +360,52 @@ class VisionHubService {
       });
     }
   }
+  /**
+   * Generates a Julia fractal and sends the raw PNG image directly to the client
+   * @param {number} width - Image width
+   * @param {number} height - Image height
+   * @param {number} maxIterations - Maximum iterations
+   * @param {number} cReal - Real part of complex constant c
+   * @param {number} cImag - Imaginary part of complex constant c
+   * @param {Object} res - Express response object
+   * @returns {Promise<void>}
+   */
+  static async generateJuliaImage(
+    width,
+    height,
+    maxIterations,
+    cReal,
+    cImag,
+    res
+  ) {
+    try {
+      console.log(
+        `Generating Julia image directly: ${width}x${height}, maxIter: ${maxIterations}, c: ${cReal} + ${cImag}i`
+      );
+
+      // 1. Generate the fractal image
+      const img = this.generateJulia(
+        width,
+        height,
+        maxIterations,
+        cReal,
+        cImag
+      );
+
+      // 2. Encode to PNG buffer asynchronously
+      const imageBuffer = await cv.imencodeAsync(".png", img);
+
+      // 3. Set the HTTP header to tell the browser this is an image
+      res.set("Content-Type", "image/png");
+
+      // 4. Send the raw binary buffer
+      res.send(imageBuffer);
+    } catch (error) {
+      console.error("Fractal Image Generation Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
+
 //
 module.exports = VisionHubService;

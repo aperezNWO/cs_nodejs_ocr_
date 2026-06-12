@@ -13,7 +13,7 @@ app.use(cors());
 // TESSERACT  - OCR
 //////////////////////////////////////////////////
 
-app.post("/uploadOCR", async (req, res) => {
+app.post("/api/OCR/uploadOCR", async (req, res) => {
   try {
     const { base64Image } = req.body;
     if (!base64Image) {
@@ -30,7 +30,7 @@ app.post("/uploadOCR", async (req, res) => {
 // OPENCV - SHAPES
 //////////////////////////////////////////////////
 
-app.post("/uploadCV", async (req, res) => {
+app.post("/api/OpenCv/uploadCV", async (req, res) => {
   try {
     const { base64Image } = req.body;
     if (!base64Image) {
@@ -47,7 +47,8 @@ app.post("/uploadCV", async (req, res) => {
 // OPENCV - FRACTAL DEMO
 //////////////////////////////////////////////////
 
-app.get("/generateJulia", async (req, res) => {
+//
+app.get("/api/OpenCv/generateJulia", async (req, res) => {
   try {
     // --- PROTECT THE FREE VM ---
     // Cap the maximum dimensions to prevent users from crashing the Codesandbox
@@ -82,6 +83,39 @@ app.get("/generateJulia", async (req, res) => {
   }
 });
 
+//
+app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
+  try {
+    // --- PROTECT THE FREE VM ---
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 600;
+    const MAX_ITERATIONS = 500;
+
+    let width = parseInt(req.query.width) || MAX_WIDTH;
+    let height = parseInt(req.query.height) || MAX_HEIGHT;
+    let maxIterations = parseInt(req.query.maxIterations) || MAX_ITERATIONS;
+    width = Math.min(width, MAX_WIDTH);
+    height = Math.min(height, MAX_HEIGHT);
+    maxIterations = Math.min(maxIterations, MAX_ITERATIONS);
+
+    const cReal = req.query.cReal ? parseFloat(req.query.cReal) : -0.4;
+    const cImag = req.query.cImag ? parseFloat(req.query.cImag) : 0.6;
+
+    // Call the new method that sends raw image data
+    await VisionHubService.generateJuliaImage(
+      width,
+      height,
+      maxIterations,
+      cReal,
+      cImag,
+      res
+    );
+  } catch (error) {
+    console.error("Generate Julia Image error:", error);
+    res.status(500).json({ error: "Failed to generate fractal image" });
+  }
+});
+
 //////////////////////////////////////////////////
 // DIAGNOSTICS
 //////////////////////////////////////////////////
@@ -91,9 +125,11 @@ app.get("/health", (req, res) => {
     status: "OK",
     service: "VisionHub",
     endpoints: [
-      "POST /uploadOCR     - Tesseract -- (ocr / text extraction)",
-      "POST /uploadCV      - OpenCv    -- (shape   detection)",
-      "GET  /generateJulia - OpenCv    -- (fractal generation)",
+      "POST /api/ocr/uploadOCR             - Tesseract -- (ocr / text extraction)",
+      "POST /api/opencv/uploadCV           - OpenCv    -- (shape   detection)",
+      "GET  /api/opencv/generateJulia      - OpenCv    -- (fractal generation)",
+      "GET  /api/opencv/generateJuliaImage - OpenCv    -- (fractal generation)",
+      "GET  /health                        - Service health check)",
     ],
   });
 });
@@ -105,8 +141,17 @@ app.get("/health", (req, res) => {
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
   console.log(`Available endpoints:`);
-  console.log(`  POST /uploadOCR     - Tesseract -- (ocr / text extraction)`);
-  console.log(`  POST /uploadCV      - OpenCv    -- (shape   detection)`);
-  console.log(`  GET  /generateJulia - OpenCv    -- (fractal generation)`),
-    console.log(`  GET  /health        - Service health check`);
+  console.log(
+    `  POST /api/ocr/uploadOCR             - Tesseract -- (ocr / text extraction)`
+  );
+  console.log(
+    `  POST /api/opencv/uploadCV           - OpenCv    -- (shape   detection)`
+  );
+  console.log(
+    `  GET  /api/opencv/generateJulia      - OpenCv    -- (fractal generation)`
+  ),
+    console.log(
+      `  GET  /api/opencv/generateJuliaImage - OpenCv    -- (fractal generation)`
+    ),
+    console.log(`  GET  /api/opencv/health             - Service health check`);
 });
