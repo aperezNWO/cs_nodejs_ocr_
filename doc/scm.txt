@@ -3,6 +3,11 @@
 ################################################
 
 
+################################################
+## GIT  
+################################################
+
+
 echo "# CS_NodeJs_Ocr_" >> README.md
 git init
 git add README.md
@@ -11,6 +16,17 @@ git branch -M main
 git remote add origin https://github.com/aperezNWO/CS_NodeJs_Ocr_.git
 git push -u origin main
 
+
+################################################
+## NODE.JS   
+################################################
+
+pkill node
+node index.js 
+
+################################################
+## OPENCV   
+################################################
 
 # Step 1: Install OpenCV system library (done)
 sudo apt-get update
