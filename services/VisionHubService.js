@@ -245,7 +245,7 @@ class VisionHubService {
   }
 
   /**
-   * Generates a Julia set fractal image
+   * Generates a Julia set fractal image (Highly Optimized for Node.js)
    * @param {number} width - Image width
    * @param {number} height - Image height
    * @param {number} maxIterations - Maximum iterations for the fractal
@@ -254,8 +254,9 @@ class VisionHubService {
    * @returns {cv.Mat} - The generated OpenCV Mat image
    */
   static generateJulia(width, height, maxIterations, cReal, cImag) {
-    // Create a blank image (height, width, type, color)
-    const img = new cv.Mat(height, width, cv.CV_8UC3, new cv.Vec3(0, 0, 0));
+    // 1. Allocate a Buffer for the pixel data (3 bytes per pixel for BGR).
+    // Buffer is an ArrayBufferView, which prevents the C++ assertion crash.
+    const data = Buffer.alloc(height * width * 3);
 
     for (let y = 0; y < height; ++y) {
       for (let x = 0; x < width; ++x) {
@@ -269,8 +270,6 @@ class VisionHubService {
         let iteration = 0;
         // abs(z) < 2 is mathematically equivalent to zReal^2 + zImag^2 < 4
         while (zReal * zReal + zImag * zImag < 4 && iteration < maxIterations) {
-          // z = z * z + c
-          // (zReal + i*zImag)^2 = (zReal^2 - zImag^2) + i*(2*zReal*zImag)
           const nextZReal = zReal * zReal - zImag * zImag + cReal;
           const nextZImag = 2 * zReal * zImag + cImag;
 
@@ -279,11 +278,31 @@ class VisionHubService {
           ++iteration;
         }
 
-        // Color the pixel based on the number of iterations
-        img.set(y, x, this.getJuliaColor(iteration, maxIterations));
+        // Calculate color directly to avoid function call overhead in the loop
+        let r, g, b;
+        if (iteration === maxIterations) {
+          r = 0;
+          g = 0;
+          b = 0;
+        } else {
+          const t = iteration / maxIterations;
+          r = Math.floor(9 * (1 - t) * t * t * t * 255);
+          g = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
+          b = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
+        }
+
+        // OpenCV uses BGR format.
+        // Calculate the 1D index for the current pixel (y * width + x) * 3 channels
+        const index = (y * width + x) * 3;
+        data[index] = b;
+        data[index + 1] = g;
+        data[index + 2] = r;
       }
     }
-    return img;
+
+    // 2. Create the Mat directly from the Buffer.
+    // This satisfies the C++ binding's requirement and skips the slow img.set() method.
+    return new cv.Mat(height, width, cv.CV_8UC3, data);
   }
 
   /**
@@ -309,7 +328,7 @@ class VisionHubService {
         `Generating Julia fractal: ${width}x${height}, maxIter: ${maxIterations}, c: ${cReal} + ${cImag}i`
       );
 
-      // Generate the fractal image
+      // 1. Generate the fractal image (returns a cv.Mat)
       const img = this.generateJulia(
         width,
         height,
@@ -318,14 +337,16 @@ class VisionHubService {
         cImag
       );
 
-      // Encode the image to PNG buffer
-      const imageBuffer = img.imencode(".png");
+      // 2. Encode the image to a PNG buffer using the ASYNC OpenCV method.
+      // This runs the C++ encoding in the background without blocking Node.js.
+      const imageBuffer = await cv.imencodeAsync(".png", img);
 
-      // Convert to base64
+      // 3. Convert the raw buffer to a base64 string
       const base64Image = `data:image/png;base64,${imageBuffer.toString(
         "base64"
       )}`;
 
+      // 4. Send the response
       res.status(200).json({
         success: true,
         message: "Fractal generated successfully",
@@ -340,6 +361,5 @@ class VisionHubService {
     }
   }
 }
-
 //
 module.exports = VisionHubService;

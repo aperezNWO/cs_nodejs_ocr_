@@ -49,13 +49,22 @@ app.post("/uploadCV", async (req, res) => {
 
 app.get("/generateJulia", async (req, res) => {
   try {
-    // Read parameters from the URL query string (req.query) instead of req.body
-    // We use parseInt/parseFloat because query parameters are always strings
-    const width = parseInt(req.query.width) || 800;
-    const height = parseInt(req.query.height) || 600;
-    const maxIterations = parseInt(req.query.maxIterations) || 100;
+    // --- PROTECT THE FREE VM ---
+    // Cap the maximum dimensions to prevent users from crashing the Codesandbox
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 600;
+    const MAX_ITERATIONS = 150;
 
-    // Default 'c' values create a classic, beautiful Julia set
+    // Lowered defaults for instant generation on free tiers
+    let width = parseInt(req.query.width) || 400;
+    let height = parseInt(req.query.height) || 300;
+    let maxIterations = parseInt(req.query.maxIterations) || 50;
+
+    // Enforce limits so the server never processes more than it can handle
+    width = Math.min(width, MAX_WIDTH);
+    height = Math.min(height, MAX_HEIGHT);
+    maxIterations = Math.min(maxIterations, MAX_ITERATIONS);
+
     const cReal = req.query.cReal ? parseFloat(req.query.cReal) : -0.7;
     const cImag = req.query.cImag ? parseFloat(req.query.cImag) : 0.27015;
 
@@ -73,6 +82,10 @@ app.get("/generateJulia", async (req, res) => {
   }
 });
 
+//////////////////////////////////////////////////
+// DIAGNOSTICS
+//////////////////////////////////////////////////
+
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -84,6 +97,10 @@ app.get("/health", (req, res) => {
     ],
   });
 });
+
+//////////////////////////////////////////////////
+// DRIVER CODE
+//////////////////////////////////////////////////
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
