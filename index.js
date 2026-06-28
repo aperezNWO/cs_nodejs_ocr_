@@ -116,32 +116,21 @@ app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
   }
 });
 
-//////////////////////////////////////////////////
-// PURE MATH EXTRACTOR ROUTES
-//////////////////////////////////////////////////
-
-// Endpoint for Julia Set
-// Expects: GET /api/fractal/julia?zoomInOut=true&zoomStep=1.5
-// Endpoint for Julia Set
-// URL Example: /api/fractal/julia?zoomInOut=true&zoomStep=2.0
 app.get('/api/fractal/julia', (req, res) => {
-  // Convert 'true' string to boolean
-  const zoomInOut = req.query.zoomInOut === 'true';
-  
-  // Parse the step as a float; default to 1.0 if not provided
-  const zoomStep = parseFloat(req.query.zoomStep) || 1.0;
-  
-  console.log(`Generating Julia: zoomIn=${zoomInOut}, factor=${zoomStep}`);
 
-  // Call the engine with the parsed parameters
+  // Frontend sends 'zoominout' (lowercase) — match it exactly
+  const zoomInOut = req.query.zoominout === 'true';
+
+  // Default zoomStep to 1 if missing or zero
+  const zoomStep = parseFloat(req.query.zoomStep) || 1.0;
+
+  console.log(`Generating Julia: zoomIn=${zoomInOut}, step=${zoomStep}`);
+
   const points = engine.generateJulia(zoomInOut, zoomStep);
-  
   res.json(points);
 });
 
-// Endpoint for Leaf
-// Expects: GET /api/fractal/leaf
-app.get("/api/fractal/leaf", (req, res) => {
+app.get('/api/fractal/leaf', (req, res) => {
   const points = engine.generateLeaf();
   res.json(points);
 });
