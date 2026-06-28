@@ -4,7 +4,7 @@ const app = _express();
 const cors = require("cors");
 const port = 3000;
 const VisionHubService = require("./services/VisionHubService");
-
+const engine = require("./services/FractalEngine"); // Import the engine we just create
 //
 app.use(_express.json({ limit: "10mb" }));
 app.use(cors());
@@ -117,127 +117,24 @@ app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
 });
 
 //////////////////////////////////////////////////
-// PURE MATH EXTRACTOR - MANDELBROT
+// PURE MATH EXTRACTOR ROUTES
 //////////////////////////////////////////////////
-app.get("/api/fractal/generateMandelbrotPureMath", async (req, res) => {
-  try {
-    const MAX_WIDTH = 800;
-    const MAX_HEIGHT = 600;
-    const MAX_ITERATIONS = 300;
 
-    let width         = parseInt(req.query.width) || 350;
-    let height        = parseInt(req.query.height) || 350;
-    let maxIterations = parseInt(req.query.maxIterations) || 100;
+// Endpoint for Julia Set
+// Expects: GET /api/fractal/julia?zoomInOut=true&zoomStep=1.5
+app.get("/api/fractal/julia", (req, res) => {
+  const zoomInOut = req.query.zoomInOut === "true";
+  const zoomStep = parseFloat(req.query.zoomStep) || 1.0;
 
-    width = Math.min(width, MAX_WIDTH);
-    height = Math.min(height, MAX_HEIGHT);
-    maxIterations = Math.min(maxIterations, MAX_ITERATIONS);
-
-    // Zoom framing coordinates provided by your frontend "Robocop" tracking reticle
-    const bounds = {
-      xMin: req.query.xMin ? parseFloat(req.query.xMin) : -2.0,
-      xMax: req.query.xMax ? parseFloat(req.query.xMax) : 1.0,
-      yMin: req.query.yMin ? parseFloat(req.query.yMin) : -1.2,
-      yMax: req.query.yMax ? parseFloat(req.query.yMax) : 1.2,
-    };
-
-    const iterationMatrix = VisionHubService.generateMandelbrotPureMath(
-      width,
-      height,
-      maxIterations,
-      bounds
-    );
-
-    res.status(200).json({
-      success: true,
-      width: width,
-      height: height,
-      maxIterations: maxIterations,
-      bounds: bounds,
-      matrix: iterationMatrix,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+  const points = engine.generateJulia(zoomInOut, zoomStep);
+  res.json(points);
 });
 
-//////////////////////////////////////////////////
-// PURE MATH EXTRACTOR - NO IMAGE OVERHEAD
-//////////////////////////////////////////////////
-
-app.get("/api/Fractal/generateJuliaPureMath", async (req, res) => {
-  try {
-    // Keep baseline sanity guardrails active to avoid malicious over-allocation
-    const MAX_WIDTH = 800;
-    const MAX_HEIGHT = 600;
-    const MAX_ITERATIONS = 300;
-
-    let width = parseInt(req.query.width) || 350;
-    let height = parseInt(req.query.height) || 350;
-    let maxIterations = parseInt(req.query.maxIterations) || 100;
-
-    width = Math.min(width, MAX_WIDTH);
-    height = Math.min(height, MAX_HEIGHT);
-    maxIterations = Math.min(maxIterations, MAX_ITERATIONS);
-
-    const cReal = req.query.cReal ? parseFloat(req.query.cReal) : -0.4;
-    const cImag = req.query.cImag ? parseFloat(req.query.cImag) : 0.6;
-
-    // Viewport matrix framing boundaries passed by front-end coordinates tracker (Zoom in/out handler)
-    const bounds = {
-      xMin: req.query.xMin ? parseFloat(req.query.xMin) : -1.5,
-      xMax: req.query.xMax ? parseFloat(req.query.xMax) : 1.5,
-      yMin: req.query.yMin ? parseFloat(req.query.yMin) : -1.5,
-      yMax: req.query.yMax ? parseFloat(req.query.yMax) : 1.5,
-    };
-
-    // Calculate structural numbers completely detached from OpenCV frameworks
-    const iterationMatrix = VisionHubService.generateJuliaPureMath(
-      width,
-      height,
-      maxIterations,
-      cReal,
-      cImag,
-      bounds
-    );
-
-    res.status(200).json({
-      success: true,
-      width: width,
-      height: height,
-      maxIterations: maxIterations,
-      bounds: bounds,
-      matrix: iterationMatrix,
-    });
-  } catch (error) {
-    console.error("Pure Math Fractal Calculation Error:", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-
-
-//////////////////////////////////////////////////
-// PURE MATH EXTRACTOR - BARNSLEY FERN (STATIC)
-//////////////////////////////////////////////////
-app.get("/api/fractal/generateBarnsleyFernPureMath", async (req, res) => {
-  try {
-    // Prevent client requests from over-allocating points and hanging the event loop thread
-    const MAX_POINTS = 100000;
-    let points       = parseInt(req.query.points) || 50000;
-    points           = Math.min(points, MAX_POINTS);
-
-    const pointCloud = VisionHubService.generateBarnsleyFernPureMath(points);
-
-    res.status(200).json({
-      success: true,
-      count: pointCloud.length,
-      isZoomable: false, // Explicitly letting frontend know navigation options don't apply here!
-      points: pointCloud,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
+// Endpoint for Leaf
+// Expects: GET /api/fractal/leaf
+app.get("/api/fractal/leaf", (req, res) => {
+  const points = engine.generateLeaf();
+  res.json(points);
 });
 
 //////////////////////////////////////////////////
@@ -253,9 +150,8 @@ app.get("/health", (req, res) => {
       "POST /api/opencv/uploadCV                      - OpenCv     -- (shape   detection)",
       "GET  /api/opencv/generateJulia                 - OpenCv     -- (fractal generation)",
       "GET  /api/opencv/generateJuliaImage            - OpenCv     -- (fractal generation)",
-      "GET  /api/fractal/generateJuliaPureMath        - Javascript -- (fractal generation)",
-      "GET  /api/fractal/generateMandelbrotPureMath   - Javascript -- (fractal generation)",
-      "GET  /api/fractal/generateBarnsleyFernPureMath - Javascript -- (fractal generation)",
+      "GET  /api/fractal/julia                        - Javascript -- (fractal generation)",
+      "GET  /api/fractal/leaf                         - Javascript -- (fractal generation)",
       "GET  /health                                   - Service health check)",
     ],
   });
@@ -281,15 +177,10 @@ app.listen(port, () => {
       `  GET  /api/opencv/generateJuliaImage - OpenCv    -- (fractal generation)`
     ),
     console.log(
-      `  GET  /api/fractal/generateJuliaPureMath         - Javascript   -- (fractal generation)`
+      `  GET  /api/fractal/julia             - Javascript   -- (fractal generation)`
     ),
     console.log(
-      `  GET  /api/fractal/generateMandelbrotPureMath    - Javascript   -- (fractal generation)`
+      `  GET  /api/fractal/leaf              - Javascript   -- (fractal generation)`
     ),
-    console.log(
-      `  GET  /api/fractal/generateBarnsleyFernPureMath  - Javascript   -- (fractal generation)`
-    ),
-    console.log(
-      `  GET  /health              - Service health check`
-    );
+    console.log(`  GET  /health              - Service health check`);
 });
