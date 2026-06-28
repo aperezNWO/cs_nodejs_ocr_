@@ -405,7 +405,178 @@ class VisionHubService {
       res.status(500).json({ error: error.message });
     }
   }
-}
+  //============================================================================
+  // MANDELBROT PURE MATHEMATICS ENGINE (With Viewport Boundaries Tracking)
+  //============================================================================
 
+  /**
+   * Generates a raw iteration matrix for the Mandelbrot Set based on adaptive viewports
+   * @param {number} width - Horizontal resolution grid size
+   * @param {number} height - Vertical resolution grid size
+   * @param {number} maxIterations - Computational depth limit
+   * @param {Object} bounds - Bounding complex coordinate viewport box (Zoom handling parameters)
+   * @returns {number[][]} - 2D Matrix grid containing point resolution integers
+   */
+  static async generateMandelbrotPureMath(
+    width,
+    height,
+    maxIterations,
+    bounds
+  ) {
+    const matrix = [];
+
+    const xMin = parseFloat(bounds.xMin);
+    const xMax = parseFloat(bounds.xMax);
+    const yMin = parseFloat(bounds.yMin);
+    const yMax = parseFloat(bounds.yMax);
+
+    const xStep = (xMax - xMin) / width;
+    const yStep = (yMax - yMin) / height;
+
+    for (let y = 0; y < height; y++) {
+      const row = new Int32Array(width);
+      const cy = yMin + y * yStep; // Imaginary coordinate constant for this row
+
+      for (let x = 0; x < width; x++) {
+        const cx = xMin + x * xStep; // Real coordinate constant for this pixel column
+
+        let zReal = 0.0;
+        let zImag = 0.0;
+        let iteration = 0;
+
+        // Mandelbrot Formula: Z_{n+1} = Z_n^2 + C
+        while (
+          zReal * zReal + zImag * zImag < 4.0 &&
+          iteration < maxIterations
+        ) {
+          const nextZReal = zReal * zReal - zImag * zImag + cx;
+          const nextZImag = 2 * zReal * zImag + cy;
+
+          zReal = nextZReal;
+          zImag = nextZImag;
+          iteration++;
+        }
+        row[x] = iteration;
+      }
+      matrix.push(Array.from(row));
+    }
+    return matrix;
+  }
+  //============================================================================
+  // JULIA FRACTAL PURE MATHEMATICAL FRACTAL SEEDING (No OpenCV Dependency)
+  //============================================================================
+
+  /**
+   * Generates a raw iteration matrix for the Julia Set to be mapped by an external canvas
+   * @param {number} width - Horizontal resolution grid size
+   * @param {number} height - Vertical resolution grid size
+   * @param {number} maxIterations - Computational depth limit
+   * @param {number} cReal - Real constant mapping coordinate
+   * @param {number} cImag - Imaginary constant mapping coordinate
+   * @param {Object} bounds - Bounding complex coordinate viewport box
+   * @returns {number[][]} - 2D Matrix grid containing point resolution integers
+   */
+  static generateJuliaPureMath(
+    width,
+    height,
+    maxIterations,
+    cReal,
+    cImag,
+    bounds
+  ) {
+    const matrix = [];
+
+    const xMin = parseFloat(bounds.xMin);
+    const xMax = parseFloat(bounds.xMax);
+    const yMin = parseFloat(bounds.yMin);
+    const yMax = parseFloat(bounds.yMax);
+
+    const xStep = (xMax - xMin) / width;
+    const yStep = (yMax - yMin) / height;
+
+    for (let y = 0; y < height; y++) {
+      const row = new Int32Array(width); // Using typed arrays internally for processing speed
+      const cy = yMin + y * yStep;
+
+      for (let x = 0; x < width; x++) {
+        const cx = xMin + x * xStep;
+
+        let zReal = cx;
+        let zImag = cy;
+        let iteration = 0;
+
+        while (
+          zReal * zReal + zImag * zImag < 4.0 &&
+          iteration < maxIterations
+        ) {
+          const nextZReal = zReal * zReal - zImag * zImag + cReal;
+          const nextZImag = 2 * zReal * zImag + cImag;
+
+          zReal = nextZReal;
+          zImag = nextZImag;
+          iteration++;
+        }
+        row[x] = iteration;
+      }
+      // Convert typed array back to standard array format for easy native JSON parsing serialization
+      matrix.push(Array.from(row));
+    }
+
+    return matrix;
+  }
+
+  //============================================================================
+  // BARNSLEY FERN PURE MATHEMATICS ENGINE (Iterated Function System Attractor)
+  //============================================================================
+
+  /**
+   * Generates an array of calculated coordinates representing the Barnsley Fern point-cloud
+   * @param {number} totalPoints - Total number of random mutations to execute (e.g., 50000)
+   * @returns {Object[]} - Array of point objects containing raw coordinate ratios [{x, y}]
+   */
+  static generateBarnsleyFernPureMath(totalPoints = 50000) {
+    const pointsArray = [];
+
+    // Initial starting point at the origin vector matrix
+    let x = 0.0;
+    let y = 0.0;
+
+    for (let i = 0; i < totalPoints; i++) {
+      const r = Math.random();
+      let nextX, nextY;
+
+      // Chaos Game Matrix Rules Matrix Transformations:
+      if (r < 0.01) {
+        // 1. Stem generation
+        nextX = 0.0;
+        nextY = 0.16 * y;
+      } else if (r < 0.86) {
+        // 2. Successive smaller leaflets scaling mutation
+        nextX = 0.85 * x + 0.04 * y;
+        nextY = -0.04 * x + 0.85 * y + 1.6;
+      } else if (r < 0.93) {
+        // 3. Left-side major leaflet branch
+        nextX = 0.2 * x - 0.26 * y;
+        nextY = 0.23 * x + 0.22 * y + 1.6;
+      } else {
+        // 4. Right-side major leaflet branch
+        nextX = -0.15 * x + 0.28 * y;
+        nextY = 0.26 * x + 0.24 * y + 0.44;
+      }
+
+      x = nextX;
+      y = nextY;
+
+      // Map mathematical space onto a safe, clean uniform distribution ratio (0.0 to 1.0)
+      // The classic fern normally maps inside bounds: X: [-2.182, 2.655] and Y: [0.0, 9.998]
+      const normalizedX = (x + 2.182) / (2.655 + 2.182);
+      const normalizedY = y / 9.998;
+
+      pointsArray.push({ x: normalizedX, y: normalizedY });
+    }
+
+    return pointsArray;
+  }
+}
 //
 module.exports = VisionHubService;
