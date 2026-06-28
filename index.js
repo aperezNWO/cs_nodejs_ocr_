@@ -256,7 +256,7 @@ app.get("/health", (req, res) => {
       "GET  /api/fractal/generateJuliaPureMath        - Javascript -- (fractal generation)",
       "GET  /api/fractal/generateMandelbrotPureMath   - Javascript -- (fractal generation)",
       "GET  /api/fractal/generateBarnsleyFernPureMath - Javascript -- (fractal generation)",
-      "GET  /health                        - Service health check)",
+      "GET  /health                                   - Service health check)",
     ],
   });
 });
@@ -281,15 +281,15 @@ app.listen(port, () => {
       `  GET  /api/opencv/generateJuliaImage - OpenCv    -- (fractal generation)`
     ),
     console.log(
-      `  GET  /api/opencv/generateJuliaPureMath         - Javascript   -- (fractal generation)`
+      `  GET  /api/fractal/generateJuliaPureMath         - Javascript   -- (fractal generation)`
     ),
     console.log(
-      `  GET  /api/opencv/generateMandelbrotPureMath    - Javascript   -- (fractal generation)`
+      `  GET  /api/fractal/generateMandelbrotPureMath    - Javascript   -- (fractal generation)`
     ),
     console.log(
-      `  GET  /api/opencv/generateBarnsleyFernPureMath  - Javascript   -- (fractal generation)`
+      `  GET  /api/fractal/generateBarnsleyFernPureMath  - Javascript   -- (fractal generation)`
     ),
     console.log(
-      `  GET  /api/opencv/health              - Service health check`
+      `  GET  /health              - Service health check`
     );
 });
