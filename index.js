@@ -117,6 +117,51 @@ app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
 });
 
 //////////////////////////////////////////////////
+// PURE MATH EXTRACTOR - MANDELBROT
+//////////////////////////////////////////////////
+app.get("/api/fractal/generateMandelbrotPureMath", async (req, res) => {
+  try {
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 600;
+    const MAX_ITERATIONS = 300;
+
+    let width         = parseInt(req.query.width) || 350;
+    let height        = parseInt(req.query.height) || 350;
+    let maxIterations = parseInt(req.query.maxIterations) || 100;
+
+    width = Math.min(width, MAX_WIDTH);
+    height = Math.min(height, MAX_HEIGHT);
+    maxIterations = Math.min(maxIterations, MAX_ITERATIONS);
+
+    // Zoom framing coordinates provided by your frontend "Robocop" tracking reticle
+    const bounds = {
+      xMin: req.query.xMin ? parseFloat(req.query.xMin) : -2.0,
+      xMax: req.query.xMax ? parseFloat(req.query.xMax) : 1.0,
+      yMin: req.query.yMin ? parseFloat(req.query.yMin) : -1.2,
+      yMax: req.query.yMax ? parseFloat(req.query.yMax) : 1.2,
+    };
+
+    const iterationMatrix = VisionHubService.generateMandelbrotPureMath(
+      width,
+      height,
+      maxIterations,
+      bounds
+    );
+
+    res.status(200).json({
+      success: true,
+      width: width,
+      height: height,
+      maxIterations: maxIterations,
+      bounds: bounds,
+      matrix: iterationMatrix,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+//////////////////////////////////////////////////
 // PURE MATH EXTRACTOR - NO IMAGE OVERHEAD
 //////////////////////////////////////////////////
 
@@ -170,60 +215,17 @@ app.get("/api/Fractal/generateJuliaPureMath", async (req, res) => {
   }
 });
 
-//////////////////////////////////////////////////
-// PURE MATH EXTRACTOR - MANDELBROT
-//////////////////////////////////////////////////
-app.get("/api/MathEngine/generateMandelbrotPureMath", async (req, res) => {
-  try {
-    const MAX_WIDTH = 800;
-    const MAX_HEIGHT = 600;
-    const MAX_ITERATIONS = 300;
 
-    let width = parseInt(req.query.width) || 350;
-    let height = parseInt(req.query.height) || 350;
-    let maxIterations = parseInt(req.query.maxIterations) || 100;
-
-    width = Math.min(width, MAX_WIDTH);
-    height = Math.min(height, MAX_HEIGHT);
-    maxIterations = Math.min(maxIterations, MAX_ITERATIONS);
-
-    // Zoom framing coordinates provided by your frontend "Robocop" tracking reticle
-    const bounds = {
-      xMin: req.query.xMin ? parseFloat(req.query.xMin) : -2.0,
-      xMax: req.query.xMax ? parseFloat(req.query.xMax) : 1.0,
-      yMin: req.query.yMin ? parseFloat(req.query.yMin) : -1.2,
-      yMax: req.query.yMax ? parseFloat(req.query.yMax) : 1.2,
-    };
-
-    const iterationMatrix = VisionHubService.generateMandelbrotPureMath(
-      width,
-      height,
-      maxIterations,
-      bounds
-    );
-
-    res.status(200).json({
-      success: true,
-      width: width,
-      height: height,
-      maxIterations: maxIterations,
-      bounds: bounds,
-      matrix: iterationMatrix,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
 //////////////////////////////////////////////////
 // PURE MATH EXTRACTOR - BARNSLEY FERN (STATIC)
 //////////////////////////////////////////////////
-app.get("/api/MathEngine/generateBarnsleyFernPureMath", async (req, res) => {
+app.get("/api/fractal/generateBarnsleyFernPureMath", async (req, res) => {
   try {
     // Prevent client requests from over-allocating points and hanging the event loop thread
     const MAX_POINTS = 100000;
-    let points = parseInt(req.query.points) || 50000;
-    points = Math.min(points, MAX_POINTS);
+    let points       = parseInt(req.query.points) || 50000;
+    points           = Math.min(points, MAX_POINTS);
 
     const pointCloud = VisionHubService.generateBarnsleyFernPureMath(points);
 
