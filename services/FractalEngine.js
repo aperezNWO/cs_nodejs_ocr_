@@ -1,35 +1,37 @@
 // FractalEngine.js
 
 class FractalEngine {
-  // Julia Set Generator (Exact port of your J2SE logic)
   generateJulia(zoomInOut, zoomStep) {
-    const points = [];
-    const width = 800;
-    const height = 600;
+    const points       = [];
+    const width        = 800;
+    const height       = 600;
     const maxIterations = 500;
-
+  
     let minX = -1.5;
-    let maxX = 1.5;
+    let maxX =  1.5;
     let minY = -1.5;
-    let maxY = 1.5;
-
-    const zoomFactor = zoomInOut ? 1.0 / zoomStep : zoomStep;
+    let maxY =  1.5;
+  
     const centerX = 0.0;
     const centerY = 0.0;
-
-    minX = centerX + (minX - centerX) * zoomFactor;
-    maxX = centerX + (maxX - centerX) * zoomFactor;
-    minY = centerY + (minY - centerY) * zoomFactor;
-    maxY = centerY + (maxY - centerY) * zoomFactor;
-
+  
+    // zoomInOut=true  → zoom IN  (divide range by step → smaller window)
+    // zoomInOut=false → zoom OUT (divide range by 1/step = multiply → larger window)
+    const zoomFactor = zoomInOut ? zoomStep : 1.0 / zoomStep;
+  
+    minX = centerX + (minX - centerX) / zoomFactor;
+    maxX = centerX + (maxX - centerX) / zoomFactor;
+    minY = centerY + (minY - centerY) / zoomFactor;
+    maxY = centerY + (maxY - centerY) / zoomFactor;
+  
     const cRe = -0.4;
-    const cIm = 0.6;
-
+    const cIm =  0.6;
+  
     for (let screenX = 0; screenX < width; screenX++) {
       for (let screenY = 0; screenY < height; screenY++) {
         let zRe = minX + (screenX * (maxX - minX)) / width;
         let zIm = minY + (screenY * (maxY - minY)) / height;
-
+  
         let iter = 0;
         while (zRe * zRe + zIm * zIm <= 4.0 && iter < maxIterations) {
           let nextRe = zRe * zRe - zIm * zIm + cRe;
@@ -38,10 +40,12 @@ class FractalEngine {
           zIm = nextIm;
           iter++;
         }
-
-        const intensity =
-          iter === maxIterations ? 0 : Math.floor((iter * 255) / maxIterations);
-        points.push({ x: screenX, y: screenY, intensity: intensity });
+  
+        const intensity = iter === maxIterations
+          ? 0
+          : Math.floor((iter * 255) / maxIterations);
+  
+        points.push({ x: screenX, y: screenY, intensity });
       }
     }
     return points;

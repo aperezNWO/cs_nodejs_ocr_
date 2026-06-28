@@ -122,11 +122,20 @@ app.get("/api/OpenCv/generateJuliaImage", async (req, res) => {
 
 // Endpoint for Julia Set
 // Expects: GET /api/fractal/julia?zoomInOut=true&zoomStep=1.5
-app.get("/api/fractal/julia", (req, res) => {
-  const zoomInOut = req.query.zoomInOut === "true";
+// Endpoint for Julia Set
+// URL Example: /api/fractal/julia?zoomInOut=true&zoomStep=2.0
+app.get('/api/fractal/julia', (req, res) => {
+  // Convert 'true' string to boolean
+  const zoomInOut = req.query.zoomInOut === 'true';
+  
+  // Parse the step as a float; default to 1.0 if not provided
   const zoomStep = parseFloat(req.query.zoomStep) || 1.0;
+  
+  console.log(`Generating Julia: zoomIn=${zoomInOut}, factor=${zoomStep}`);
 
+  // Call the engine with the parsed parameters
   const points = engine.generateJulia(zoomInOut, zoomStep);
+  
   res.json(points);
 });
 
