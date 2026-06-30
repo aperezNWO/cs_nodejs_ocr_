@@ -47,4 +47,11 @@ sudo apt-get install libopencv-dev
 
     # ⏳ This compiles OpenCV — takes 5–10 min the first time
     npm install @u4/opencv4nodejs --verbose 
+
+    # in case of faluire remove the following entries from packages.json and try again previous step
+    "node-webcam": "^0.8.2",    
+    "node-ocr": "^0.8.2",
+
+    # try all installation
+    npm install
     
