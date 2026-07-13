@@ -34,13 +34,8 @@ Scopes: ✅ repo (the top-level checkbox — this gives full repo access
 
 
 
-# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
-# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
-# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
-# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
-# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.github
 unset GITHUB_TOKEN
-git remote set-url origin   https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
+git remote set-url origin   https://Exam70486:YOUR_TOKEN@github.com/Exam70486/cs_nodejs_ocr_.git
 
 (allow secrets when needed)
 
