@@ -1,31 +1,9 @@
 {
-  "name": "nodejsapp",
-  "version": "1.0.1",
-  "description": "NodeJsApp",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Pablo Alejandro Pérez Acosta",
-  "license": "ISC",
   "dependencies": {
-    "@google-cloud/vision": "^4.0.2",
-    "@u4/opencv4nodejs": "^7.1.2",
-    "axios": "^1.6.5",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "fs-extra": "^11.2.0",
-    "multer": "^1.4.5-lts.1",
-    "nodaemon": "^0.0.5",
-    "nodejsapp": "file:",
-    "nodemon": "^3.0.3",
-    "optiic": "^0.0.21",
-    "path": "^0.12.7",
-    "sharp": "^0.33.1",
-    "socket.io": "^4.7.3",
-    "tesseract.js": "^5.0.4"
-  },
-  "devDependencies": {
-    "electron": "^28.1.1"
+    "@techstark/opencv-js": "^5.0.0-release.1",
+    "canvas": "^3.2.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "tesseract.js": "^7.0.0"
   }
 }

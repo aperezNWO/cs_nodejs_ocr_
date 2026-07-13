@@ -18,6 +18,38 @@ git push -u origin main
 
 
 ################################################
+## GIT PUBLISH NEW CHANGES
+################################################
+
+cd <directory_name>
+
+##  Create a new PAT with correct scope
+
+Go to https://github.com/settings/tokens/new (make sure you're logged in as aperezNWO)
+Fill in:
+
+Note: codespaces-write
+Expiration: 90 days
+Scopes: ✅ repo (the top-level checkbox — this gives full repo access
+
+
+
+# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
+# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
+# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
+# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
+# git remote set-url origin https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.github
+unset GITHUB_TOKEN
+git remote set-url origin   https://Exam70486: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@github.com/Exam70486/cs_nodejs_ocr_.git
+
+(allow secrets when needed)
+
+git add * 
+git commit -m"docker cchanges" -a 
+git push 
+git pull 
+
+################################################
 ## NODE.JS   
 ################################################
 
@@ -55,3 +87,76 @@ sudo apt-get install libopencv-dev
     # try all installation
     npm install
     
+################################################    
+
+/////////////////////////////////////////
+// DOCKER
+/////////////////////////////////////////
+
+--------------------------
+--------------------------
+-- FIRSR TIME BUILD
+--------------------------
+--------------------------
+
+## BUILD FROM GITHUB CODESPACES  --> "Owned by 'aperezNWO'"
+0) https://github.com/codespaces
+
+# docker must be installed on desktop. it was from codespaces, only visual studio code extensions was installed
+1) docker buildx build -t cs_nodejs_ocr .
+
+# create a tag previous to publish
+3) docker tag cs_nodejs_ocr:latest apereznwogmail/cs_nodejs_ocr:latest
+
+
+# list images built
+2) docker image ls 
+
+# log into docker for publish
+# get PAT from https://app.docker.com/accounts/apereznwogmail/settings/personal-access-tokens
+## must return 'Login Succeeded'
+4) echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
+dckr_pat_EzzfbCcs9SE7rQjGbKaGsUGnc1w
+dckr_pat_FW_Sfgm-nH6lqV29SEmRzRnz_IA
+
+# publish in docker hub
+# https://hub.docker.com/
+5) docker push apereznwogmail/cs_nodejs_ocr:latest
+
+# URL FOR RENDER : https://dashboard.render.com/
+6) docker.io/apereznwogmail/cs_nodejs_ocr:latest
+
+--------------------------
+--------------------------
+-- PUBLISH CHANGES
+--------------------------
+--------------------------
+
+## 0. save changes on git.
+git add * && git commit -m"fractal changes" && git push && git pull 
+
+## 1. docker build -t my-spring-boot-app .
+docker buildx build -t cs_nodejs_ocr .
+
+## 2. docker tag my-spring-boot-app yourusername/your-repo:latest
+docker tag cs_nodejs_ocr:latest apereznwogmail/cs_nodejs_ocr:latest
+
+## 3. log into docker for publish
+## get/create PAT from https://app.docker.com/accounts/apereznwogmail/settings/personal-access-tokens
+## create with read/write scope
+echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
+
+## 4. docker push yourusername/your-repo:latest
+docker push apereznwogmail/cs_nodejs_ocr:latest 
+
+--------------------------
+--------------------------
+-- DOCUMENTATION
+--------------------------
+--------------------------
+
+1) AI GUIDE : https://docs.docker.com/get-started/ --> GORDON
+
+2) GUIDES   : https://docs.docker.com/guides/java/
+
+/////////////////////////////////////////
