@@ -98,6 +98,7 @@ sudo apt-get install libopencv-dev
 0) https://github.com/codespaces
 
 # docker must be installed on desktop. it was from codespaces, only visual studio code extensions was installed
+# dot included !!!!
 1) docker buildx build -t cs_nodejs_ocr .
 
 # create a tag previous to publish
