@@ -112,8 +112,6 @@ sudo apt-get install libopencv-dev
 # get PAT from https://app.docker.com/accounts/apereznwogmail/settings/personal-access-tokens
 ## must return 'Login Succeeded'
 4) echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
-dckr_pat_EzzfbCcs9SE7rQjGbKaGsUGnc1w
-dckr_pat_FW_Sfgm-nH6lqV29SEmRzRnz_IA
 
 # publish in docker hub
 # https://hub.docker.com/
