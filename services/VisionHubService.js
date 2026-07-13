@@ -1,7 +1,28 @@
 const Tesseract = require("tesseract.js");
 const fs = require("fs");
 const path = require("path");
-const cv = require("@u4/opencv4nodejs");
+const { createCanvas, loadImage } = require("canvas");
+
+// ---------------------------------------------------------------------------
+// OpenCV via @techstark/opencv-js (pure WASM — no native compilation needed)
+// ---------------------------------------------------------------------------
+let cv = null;
+let cvReady = false;
+
+async function getCV() {
+  if (cvReady) return cv;
+  const loadOpenCV = require("@techstark/opencv-js");
+  cv = await loadOpenCV();
+  cvReady = true;
+  return cv;
+}
+
+function cvUnavailable(res) {
+  res.status(503).json({
+    success: false,
+    error: "OpenCV WASM module failed to load.",
+  });
+}
 
 class VisionHubService {
   //============================================================================
@@ -65,41 +86,84 @@ class VisionHubService {
   }
 
   //============================================================================
-  // COMPUTER VISION (CV) FUNCTIONS - Using opencv.js
+  // COMPUTER VISION - SHAPE DETECTION (opencv.js / @techstark/opencv-js)
   //============================================================================
+
+  /**
+   * Loads an image file into an OpenCV Mat using node-canvas.
+   * @techstark/opencv-js has no imreadAsync — we load via canvas instead.
+   */
+  static async loadImageToMat(cv, imagePath) {
+    const image = await loadImage(imagePath);
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0);
+    const imageData = ctx.getImageData(0, 0, image.width, image.height);
+
+    // imageData.data is RGBA — convert to cv.Mat
+    const mat = cv.matFromImageData(imageData);
+    return mat;
+  }
 
   static async detectShapes(imagePath) {
     const shapes = [];
-    try {
-      const src = await cv.imreadAsync(imagePath);
-      const gray = await src.cvtColor(cv.COLOR_BGR2GRAY);
-      const edges = await gray.canny(50, 150, 3, false);
-      const contours = await edges.findContours(cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    let src, gray, edges, contours, hierarchy;
 
-      for (let i = 0; i < contours.length; i++) {
-        const contour = contours[i];
-        const epsilon = 0.04 * contour.arcLength(true);
-        const approx = contour.approxPolyDP(epsilon, true);
+    try {
+      const cv = await getCV();
+
+      // Load image into Mat via canvas
+      src = await VisionHubService.loadImageToMat(cv, imagePath);
+
+      // Convert RGBA → Grayscale
+      gray = new cv.Mat();
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
+      // Canny edge detection
+      edges = new cv.Mat();
+      cv.Canny(gray, edges, 50, 150);
+
+      // Find contours
+      contours = new cv.MatVector();
+      hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+      for (let i = 0; i < contours.size(); i++) {
+        const contour = contours.get(i);
+        const perimeter = cv.arcLength(contour, true);
+        const approx = new cv.Mat();
+        cv.approxPolyDP(contour, approx, 0.04 * perimeter, true);
 
         let shape = "";
-        if (approx.length === 3) {
+        const vertices = approx.rows;
+
+        if (vertices === 3) {
           shape = "Triangle";
-        } else if (approx.length === 4) {
-          const rect = contour.boundingRect();
+        } else if (vertices === 4) {
+          const rect = cv.boundingRect(contour);
           const aspectRatio = rect.width / rect.height;
           shape = aspectRatio >= 0.95 && aspectRatio <= 1.05 ? "Square" : "Rectangle";
-        } else if (approx.length > 4) {
+        } else if (vertices > 4) {
           shape = "Circle";
         }
 
-        if (shape) {
-          shapes.push(shape);
-        }
+        approx.delete();
+        contour.delete();
+
+        if (shape) shapes.push(shape);
       }
+
       return shapes;
     } catch (error) {
       console.error("Shape detection error:", error);
       throw new Error(`Shape detection failed: ${error.message}`);
+    } finally {
+      // Always free OpenCV Mats to avoid WASM memory leaks
+      if (src) src.delete();
+      if (gray) gray.delete();
+      if (edges) edges.delete();
+      if (contours) contours.delete();
+      if (hierarchy) hierarchy.delete();
     }
   }
 
@@ -125,61 +189,60 @@ class VisionHubService {
   }
 
   //============================================================================
-  // LEGACY OPENCV FRACTAL GENERATION (Keep for old configurations)
+  // LEGACY OPENCV FRACTAL GENERATION (now via @techstark/opencv-js)
   //============================================================================
 
-  static getJuliaColor(iteration, maxIterations) {
-    if (iteration === maxIterations) return new cv.Vec3(0, 0, 0);
-    const t = iteration / maxIterations;
-    const r = Math.floor(9 * (1 - t) * t * t * t * 255);
-    const g = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
-    const b = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
-    return new cv.Vec3(b, g, r);
-  }
-
-  static generateJulia(width, height, maxIterations, cReal, cImag) {
-    const data = Buffer.alloc(height * width * 3);
-    for (let y = 0; y < height; ++y) {
-      for (let x = 0; x < width; ++x) {
-        const zx = -1.5 + (x / width) * 3.0;
-        const zy = -1.5 + (y / height) * 3.0;
-        let zReal = zx;
-        let zImag = zy;
-        let iteration = 0;
-
-        while (zReal * zReal + zImag * zImag < 4 && iteration < maxIterations) {
-          const nextZReal = zReal * zReal - zImag * zImag + cReal;
-          const nextZImag = 2 * zReal * zImag + cImag;
-          zReal = nextZReal;
-          zImag = nextZImag;
-          ++iteration;
-        }
-
-        let r, g, b;
-        if (iteration === maxIterations) {
-          r = g = b = 0;
-        } else {
-          const t = iteration / maxIterations;
-          r = Math.floor(9 * (1 - t) * t * t * t * 255);
-          g = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
-          b = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
-        }
-
-        const index = (y * width + x) * 3;
-        data[index] = b;
-        data[index + 1] = g;
-        data[index + 2] = r;
-      }
-    }
-    return new cv.Mat(height, width, cv.CV_8UC3, data);
-  }
-
   static async doGenerateJulia(width, height, maxIterations, cReal, cImag, res) {
+    let mat;
     try {
-      const img = this.generateJulia(width, height, maxIterations, cReal, cImag);
-      const imageBuffer = await cv.imencodeAsync(".png", img);
-      const base64Image = `data:image/png;base64,${imageBuffer.toString("base64")}`;
-      res.status(200).json({ success: true, message: "Fractal generated successfully", image: base64Image });
+      const cv = await getCV();
+
+      // Generate pixel data using pure math
+      const data = new Uint8Array(height * width * 4); // RGBA
+
+      for (let y = 0; y < height; ++y) {
+        for (let x = 0; x < width; ++x) {
+          let zReal = -1.5 + (x / width) * 3.0;
+          let zImag = -1.5 + (y / height) * 3.0;
+          let iteration = 0;
+
+          while (zReal * zReal + zImag * zImag < 4 && iteration < maxIterations) {
+            const nextZReal = zReal * zReal - zImag * zImag + cReal;
+            const nextZImag = 2 * zReal * zImag + cImag;
+            zReal = nextZReal;
+            zImag = nextZImag;
+            ++iteration;
+          }
+
+          let r = 0, g = 0, b = 0;
+          if (iteration !== maxIterations) {
+            const t = iteration / maxIterations;
+            r = Math.floor(9 * (1 - t) * t * t * t * 255);
+            g = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
+            b = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
+          }
+
+          const index = (y * width + x) * 4;
+          data[index] = r;
+          data[index + 1] = g;
+          data[index + 2] = b;
+          data[index + 3] = 255; // alpha
+        }
+      }
+
+      // Encode to PNG via canvas
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext("2d");
+      const imageData = ctx.createImageData(width, height);
+      imageData.data.set(data);
+      ctx.putImageData(imageData, 0, 0);
+
+      const base64Image = canvas.toDataURL("image/png");
+      res.status(200).json({
+        success: true,
+        message: "Fractal generated successfully",
+        image: base64Image,
+      });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
@@ -187,10 +250,47 @@ class VisionHubService {
 
   static async generateJuliaImage(width, height, maxIterations, cReal, cImag, res) {
     try {
-      const img = this.generateJulia(width, height, maxIterations, cReal, cImag);
-      const imageBuffer = await cv.imencodeAsync(".png", img);
+      const data = new Uint8Array(height * width * 4);
+
+      for (let y = 0; y < height; ++y) {
+        for (let x = 0; x < width; ++x) {
+          let zReal = -1.5 + (x / width) * 3.0;
+          let zImag = -1.5 + (y / height) * 3.0;
+          let iteration = 0;
+
+          while (zReal * zReal + zImag * zImag < 4 && iteration < maxIterations) {
+            const nextZReal = zReal * zReal - zImag * zImag + cReal;
+            const nextZImag = 2 * zReal * zImag + cImag;
+            zReal = nextZReal;
+            zImag = nextZImag;
+            ++iteration;
+          }
+
+          let r = 0, g = 0, b = 0;
+          if (iteration !== maxIterations) {
+            const t = iteration / maxIterations;
+            r = Math.floor(9 * (1 - t) * t * t * t * 255);
+            g = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
+            b = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
+          }
+
+          const index = (y * width + x) * 4;
+          data[index] = r;
+          data[index + 1] = g;
+          data[index + 2] = b;
+          data[index + 3] = 255;
+        }
+      }
+
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext("2d");
+      const imageData = ctx.createImageData(width, height);
+      imageData.data.set(data);
+      ctx.putImageData(imageData, 0, 0);
+
+      const buffer = canvas.toBuffer("image/png");
       res.set("Content-Type", "image/png");
-      res.send(imageBuffer);
+      res.send(buffer);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -200,9 +300,6 @@ class VisionHubService {
   // PURE MATHEMATICAL FRACTAL SEEDING (No OpenCV Dependency)
   //============================================================================
 
-  /**
-   * Generates a raw iteration matrix for the Julia Set
-   */
   static generateJuliaPureMath(width, height, maxIterations, cReal, cImag, bounds) {
     const matrix = [];
     const xMin = parseFloat(bounds.xMin);
@@ -230,9 +327,7 @@ class VisionHubService {
           zImag = nextZImag;
           iteration++;
         }
-        
-        // If it escapes instantly at the very boundary edges, flag it explicitly as 1
-        // instead of 0 to stop the client from confusing it with the inner core.
+
         row[x] = (iteration === 0 && (zReal * zReal + zImag * zImag) >= 4.0) ? 1 : iteration;
       }
       matrix.push(Array.from(row));
@@ -240,9 +335,6 @@ class VisionHubService {
     return matrix;
   }
 
-  /**
-   * Generates a raw iteration matrix for the Mandelbrot Set
-   */
   static generateMandelbrotPureMath(width, height, maxIterations, bounds) {
     const matrix = [];
     const xMin = parseFloat(bounds.xMin);
@@ -277,9 +369,6 @@ class VisionHubService {
     return matrix;
   }
 
-  /**
-   * Generates an array of calculated coordinates representing the Barnsley Fern point-cloud
-   */
   static generateBarnsleyFernPureMath(totalPoints = 50000) {
     const pointsArray = [];
     let x = 0.0;
