@@ -11,8 +11,8 @@ let cvReady = false;
 
 async function getCV() {
   if (cvReady) return cv;
-  const loadOpenCV = require("@techstark/opencv-js");
-  cv = await loadOpenCV();
+  // @techstark/opencv-js calls factory() immediately and exports the Promise
+  cv = await require("@techstark/opencv-js");
   cvReady = true;
   return cv;
 }
