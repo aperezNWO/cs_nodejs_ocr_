@@ -132,6 +132,11 @@ app.get("/api/fractal/leaf", (req, res) => {
 // DIAGNOSTICS
 //////////////////////////////////////////////////
 
+// New Endpoint: Returns the current Node.js version
+app.get('/getNodeVersion', (req, res) => {
+    res.send(process.version);
+});
+
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -144,6 +149,7 @@ app.get("/health", (req, res) => {
       "GET  /api/fractal/julia                - Javascript -- (fractal generation)",
       "GET  /api/fractal/mandelbrot           - Javascript -- (fractal generation)",
       "GET  /api/fractal/leaf                 - Javascript -- (fractal generation)",
+      "GET  /getNodeVersion                   - Get backend version",
       "GET  /health                           - Service health check",
     ],
   });
