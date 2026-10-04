@@ -251,7 +251,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'https://cs-nodejs-ocr.onrender.com/',
+        url: 'https://cs-nodejs-ocr-latest-e2kc.onrender.com/',
         description: 'render',
       },
     ],
