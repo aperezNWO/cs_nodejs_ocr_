@@ -39,7 +39,7 @@ git remote set-url origin   https://Exam70486:YOUR_TOKEN@github.com/Exam70486/cs
 (allow secrets when needed)
 
 git add *
-git commit -m"docker changes" -a
+git commit -m"[Application CSJ_NodeJs_OCR] - v[1.0.0]" -m"1) health() endpoint"
 git push
 git pull
 
