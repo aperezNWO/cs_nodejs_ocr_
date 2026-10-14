@@ -6,7 +6,7 @@ import swaggerUi          from 'swagger-ui-express';
 import swaggerJsdoc       from 'swagger-jsdoc';
 import { readFileSync }   from 'fs';
 const packageJson         = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
-const port                = process.env.PORT || 3000;   // Render injects $PORT at runtime 
+const port                = process.env.PORT || 3000;   // Render injects $PORT at runtime
 //
 const app            = express();
 const fractalEngine  = new FractalEngine();
@@ -189,6 +189,11 @@ app.get('/getNodeWebServerVersion', (req, res) => {
     version: packageJson.version // Looks for "version": "1.0.0.3" in package.json
   });
 });
+
+app.get('/getAppVersion', (req, res) => {
+  res.json("1.0.0");
+});
+
 /////////////////////////////////////////////////////////////////////////////////
 /**
  * @openapi
@@ -229,6 +234,7 @@ app.get("/health", (req, res) => {
       "GET  /api/fractal/julia                - Javascript -- (fractal generation) ",
       "GET  /api/fractal/mandelbrot           - Javascript -- (fractal generation) ",
       "GET  /api/fractal/leaf                 - Javascript -- (fractal generation) ",
+      "GET  /getAppVersion                    - Get Application version",
       "GET  /getNodeVersion                   - Get backend version",
       "GET  /getNodeWebServerVersion          - Get express version ",
       "GET  /health                           - Service health check & route catalog ",
@@ -239,6 +245,13 @@ app.get("/health", (req, res) => {
 //---------------------------------------------------
 // SWAGGER SETUP
 //---------------------------------------------------
+//---------------------------------------------------
+// SWAGGER SETUP
+//---------------------------------------------------
+
+// Dynamically infer server URL: checks for Render's environment URL first,
+// otherwise falls back to localhost using your configured port variable.
+const inferredServerUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || port}`;
 
 // 1. Configure Swagger definition options
 const swaggerOptions = {
@@ -251,13 +264,13 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'https://cs-nodejs-ocr-latest-e2kc.onrender.com/',
-        description: 'render',
+        url: inferredServerUrl,
+        description: process.env.RENDER_EXTERNAL_URL ? 'Render Production' : 'Local development server',
       },
     ],
   },
   // Points to files where Swagger JSDoc annotations are written (this file)
-  apis: ['./index.js'], 
+  apis: ['./index.js'],
 };
 
 const swaggerSpecs = swaggerJsdoc(swaggerOptions);
