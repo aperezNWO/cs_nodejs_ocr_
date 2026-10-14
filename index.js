@@ -191,7 +191,7 @@ app.get('/getNodeWebServerVersion', (req, res) => {
 });
 
 app.get('/getAppVersion', (req, res) => {
-  res.json("1.0.0");
+  res.send('1.0.1');
 });
 
 /////////////////////////////////////////////////////////////////////////////////
