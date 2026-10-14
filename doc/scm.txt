@@ -3,7 +3,7 @@
 ################################################
 
 ################################################
-## GIT  
+## GIT
 ################################################
 
 
@@ -38,17 +38,17 @@ git remote set-url origin   https://Exam70486:YOUR_TOKEN@github.com/Exam70486/cs
 
 (allow secrets when needed)
 
-git add * 
-git commit -m"docker changes" -a 
-git push 
-git pull 
+git add *
+git commit -m"docker changes" -a
+git push
+git pull
 
 ################################################
-## NODE.JS   
+## NODE.JS
 ################################################
 
 pkill node
-node index.js 
+node index.js
 
 ################################################
 ## "@techstark/opencv-js": "^5.0.0-release.1",
@@ -56,8 +56,8 @@ node index.js
 
 # try all installation
 npm install --force --legacy-peer-deps
-    
-################################################    
+
+################################################
 
 /////////////////////////////////////////
 // DOCKER
@@ -102,14 +102,14 @@ df -h . && du -h --max-depth=1 | sort -hr
     docker tag cs_nodejs_ocr:latest apereznwogmail/cs_nodejs_ocr:latest
 
 # list images built
-    docker image ls 
+    docker image ls
 
-## (codespaces) - log into docker for publish 
+## (codespaces) - log into docker for publish
     # get PAT from https://app.docker.com/accounts/apereznwogmail/settings/personal-access-tokens
     # must return 'Login Succeeded'
         echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
 
-## (docker desktop) - log into docker for publish 
+## (docker desktop) - log into docker for publish
         docker login
 
 # publish in docker hub
@@ -126,7 +126,7 @@ df -h . && du -h --max-depth=1 | sort -hr
 --------------------------
 
 ## 0. save changes on git.
-git add * && git commit -m"fractal changes" && git push && git pull 
+git add * && git commit -m"[Application CS_NodeJs_OCR] - v[1.0.0]" -m"1) health() endpoint" && git push && git pull
 
 ## 1. docker build -t my-spring-boot-app .
 docker buildx build -t cs_nodejs_ocr .
@@ -140,7 +140,7 @@ docker tag cs_nodejs_ocr:latest apereznwogmail/cs_nodejs_ocr:latest
 echo "YOUR_PAT_HERE" | docker login --username apereznwogmail --password-stdin
 
 ## 4. docker push yourusername/your-repo:latest
-docker push apereznwogmail/cs_nodejs_ocr:latest 
+docker push apereznwogmail/cs_nodejs_ocr:latest
 
 --------------------------
 --------------------------
